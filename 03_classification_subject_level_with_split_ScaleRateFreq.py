@@ -152,12 +152,18 @@ for iSubject in subjectNbTab:
 
       X_probingSamples_pca_1 = pca_optimal_dim.transform(data2transform[0:int(data2transform.shape[0]/2),:])
       y_pred = clf.predict(X_probingSamples_pca_1)
+      print(np.mean(X_probingSamples_pca_1.flatten()))
+      print(np.std(X_probingSamples_pca_1))
+      n, bins, patches = plt.hist(X_probingSamples_pca_1.flatten(), 50, density=True, facecolor='g', alpha=0.75)
+      plt.show()
       del X_probingSamples_pca_1
       X_probingSamples_pca_2 = pca_optimal_dim.transform(data2transform[int(data2transform.shape[0]/2):data2transform.shape[0],:])        
       y_pred = np.concatenate((y_pred,clf.predict(X_probingSamples_pca_2)))
+
       del X_probingSamples_pca_2
       # X_probingSamples_pca = np.concatenate((X_probingSamples_pca_1,X_probingSamples_pca_1),axis=0)
       # y_pred = clf.predict(X_probingSamples_pca)
+
 
       responses_ = np.squeeze((y_pred == np.tile(Y_train,(1,N))) & (np.tile(Y_train,(1,N)) == 'post'))
       canonicalMap = []

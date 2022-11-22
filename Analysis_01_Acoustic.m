@@ -46,41 +46,46 @@ dim2avg = 2 ;
 %% freq-rate
 X = rates;
 Y = frequencies;
+freqLabels = fliplr([250 500 1000 2000 4000]) ;
+freqPos    = sort(128-floor(24*log2(freqLabels/440)+36))*2^4 ;
 dim2avg = 2 ;
 %% between subjects
 load('./out/out_01_Acoustic_Analysis/AcousticAnalysis_BetweenSubjects.mat')
     toPlot_mp = rot90(squeeze(mean(reshape(mean_post,Nx,Ny,Nz),dim2avg))) ;
     toPlot = interp2(toPlot_mp,4);
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = (X(round(linspace(1,length(X),6)))) ;
+%     YTick_pos    = linspace(1,numrc(toPlot,1),3) ;
+%     YTick_labels = (fliplr(Y(round(linspace(1,length(Y),3))))) ;
+    YTick_pos    = freqPos ;
+    YTick_labels = freqLabels ;
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                        XTick_pos, XTick_labels,...
-                       YTick_pos, YTick_labels, 1) ;
+                       YTick_pos, YTick_labels, 0) ;
     colormap(customcolormap_preset('red-white-blue'));
-    
+
     saveas(gcf,['./out/Acoustics/mean_post/freqRate/meanPost_betweenSubjects'],'epsc')
     toPlot_pr = rot90(squeeze(mean(reshape(mean_pre,Nx,Ny,Nz),dim2avg))) ;
     toPlot = interp2(toPlot_pr,4);
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+    YTick_pos    = freqPos ;
+    YTick_labels = freqLabels ;
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                        XTick_pos, XTick_labels,...
-                       YTick_pos, YTick_labels, 1) ;
+                       YTick_pos, YTick_labels, 0) ;
     colormap(customcolormap_preset('red-white-blue'));
     saveas(gcf,['./out/Acoustics/mean_pre/freqRate/meanPre_betweenSubjects'],'epsc')
     
 %     toPlot = rot90(squeeze(mean(reshape(diff_mean,Nx,Ny,Nz),dim2avg))) ;
     toPlot = reshape(2 * abs(toPlot_mp-toPlot_pr) ./ (toPlot_mp+toPlot_pr),Nz,Nx) ;
+    max(toPlot(:))
     toPlot = interp2(toPlot,4);    
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
-    plot_sr(toPlot,300*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+    YTick_pos    = freqPos ;
+    YTick_labels = freqLabels ;
+    plot_sr(toPlot,120*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 0) ;
     colormap(customcolormap_preset('red-white-blue'));
@@ -89,6 +94,7 @@ load('./out/out_01_Acoustic_Analysis/AcousticAnalysis_BetweenSubjects.mat')
 %% within subjects    
 %% mean post freq-rate
 tabMaskAcoustic = [] ;
+maxFR = [] ;
 
 for iFile = 1:length(vecSubject) 
     
@@ -97,10 +103,10 @@ for iFile = 1:length(vecSubject)
     toPlot_mp = rot90(squeeze(mean(reshape(mean_post,Nx,Ny,Nz),dim2avg))) ;
     tabMaskAcoustic_meanPost = [tabMaskAcoustic; mean(toPlot,2)'] ;
     toPlot = interp2(toPlot_mp,4) ;
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+    YTick_pos    = freqPos ;
+    YTick_labels = freqLabels ;
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;
@@ -113,10 +119,12 @@ for iFile = 1:length(vecSubject)
     toPlot_pr = rot90(squeeze(mean(reshape(mean_pre,Nx,Ny,Nz),dim2avg))) ;
     tabMaskAcoustic_meanPre = [tabMaskAcoustic; mean(toPlot,2)'] ;
     toPlot = interp2(toPlot_pr,4) ;    
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+%     YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+%     YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = freqPos ;
+    YTick_labels = freqLabels ;
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;
@@ -127,13 +135,16 @@ for iFile = 1:length(vecSubject)
     
     % diff_mean
     toPlot = reshape(2 * abs(toPlot_mp-toPlot_pr) ./ (toPlot_mp+toPlot_pr),Nz,Nx) ;    
+    maxFR = [maxFR max(toPlot(:))] ;
     tabMaskAcoustic_diffMean = [tabMaskAcoustic; mean(toPlot,2)'] ;
     toPlot_ = interp2(toPlot,4) ;    
-    XTick_pos    = linspace(1,numrc(toPlot_,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot_,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
-    plot_sr(toPlot_,300*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
+    XTick_pos    = linspace(1,numrc(toPlot_,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+%     YTick_pos    = linspace(1,numrc(toPlot_,1),7) ;
+%     YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = freqPos ;
+    YTick_labels = freqLabels ;
+    plot_sr(toPlot_,500*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;
     colormap(customcolormap_preset('red-white-blue'));
@@ -148,40 +159,49 @@ end
 %% scale-rate
 X = rates;
 Y = scales;
-dim2avg = 3 ;
+scaleLabels = fliplr([1 2 4 8]) ;
+scalePos    = sort(9-[2 4 6 8])*(2^4-1) ;
+dim2avg     = 3 ;
 %% between subjects
     load('./out/out_01_Acoustic_Analysis/AcousticAnalysis_BetweenSubjects.mat')
     toPlot_mp = rot90(squeeze(mean(reshape(mean_post,Nx,Ny,Nz),dim2avg))) ;
     toPlot = interp2(toPlot_mp,4);
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+    % YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+    % YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = scalePos ;
+    YTick_labels = scaleLabels ;
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                        XTick_pos, XTick_labels,...
-                       YTick_pos, YTick_labels, 1) ;
+                       YTick_pos, YTick_labels, 0) ;
     colormap(customcolormap_preset('red-white-blue'));
-    
     saveas(gcf,['./out/Acoustics/mean_post/scaleRate/meanPost_betweenSubjects'],'epsc')
+    
     toPlot_pr = rot90(squeeze(mean(reshape(mean_pre,Nx,Ny,Nz),dim2avg))) ;
     toPlot = interp2(toPlot_pr,4);
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+    %YTick_pos    = linspace(1,numrc(toPlot,1),8) ;
+    %YTick_labels = fliplr(Y(round(linspace(1,length(Y),8)))) ;
+    YTick_pos    = scalePos ;
+    YTick_labels = scaleLabels ;    
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                        XTick_pos, XTick_labels,...
-                       YTick_pos, YTick_labels, 1) ;
-    colormap(customcolormap_preset('red-white-blue'));
-    
+                       YTick_pos, YTick_labels, 0) ;
+    colormap(customcolormap_preset('red-white-blue'));    
     saveas(gcf,['./out/Acoustics/mean_pre/scaleRate/meanPre_betweenSubjects'],'epsc')
+    
     toPlot_diff = reshape(2 * abs(toPlot_mp-toPlot_pr) ./ (toPlot_mp+toPlot_pr),Ny,Nx) ;
+    max(toPlot_diff(:))
     toPlot = interp2(toPlot_diff,4) ;
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
-    plot_sr(toPlot,40*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+    %YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+    %YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = scalePos ;
+    YTick_labels = scaleLabels ;
+    plot_sr(toPlot,50*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 0) ;
     colormap(customcolormap_preset('red-white-blue'));
@@ -190,19 +210,24 @@ dim2avg = 3 ;
 
 %% within subjects    
 %% mean post scale-rate
-tabMaskAcoustic = [] ;
+tabMaskAcoustic_diffMean = [] ;
+tabMaskAcoustic_meanPost = [] ;
+tabMaskAcoustic_meanPre  = [] ;
+maxSR = [] ;
 
 for iFile = 1:length(vecSubject) 
-    
+    iFile
     load(fileListWithin(iFile).name) ;
     % mean_post
     toPlot_mp = rot90(squeeze(mean(reshape(mean_post,Nx,Ny,Nz),dim2avg))) ;
-    tabMaskAcoustic_meanPost = [tabMaskAcoustic; mean(toPlot,2)'] ;
+    tabMaskAcoustic_meanPost = [tabMaskAcoustic_meanPost; mean(toPlot_mp,2)'] ;
     toPlot = interp2(toPlot_mp,4) ;
     XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
     XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+%     YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+%     YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = scalePos ;
+    YTick_labels = scaleLabels ;
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;
@@ -213,12 +238,14 @@ for iFile = 1:length(vecSubject)
     
     % mean_pre    
     toPlot_pr = rot90(squeeze(mean(reshape(mean_pre,Nx,Ny,Nz),dim2avg))) ;
-    tabMaskAcoustic_meanPre = [tabMaskAcoustic; mean(toPlot,2)'] ;
+    tabMaskAcoustic_meanPre = [tabMaskAcoustic_meanPre; mean(toPlot_pr,2)'] ;
     toPlot = interp2(toPlot_pr,4) ;    
     XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
     XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+%     YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+%     YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = scalePos ;
+    YTick_labels = scaleLabels ;
     plot_sr(toPlot,500*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;
@@ -226,26 +253,72 @@ for iFile = 1:length(vecSubject)
 
     title(num2str(iSubject));
     saveas(gcf,['./out/Acoustics/mean_pre/scaleRate/mean_pre_',num2str(iFile),'_sub#_',num2str(iSubject)],'epsc')
-    
+
     % diff_mean
     toPlot = reshape(2 * abs(toPlot_mp-toPlot_pr) ./ (toPlot_mp+toPlot_pr),Ny,Nx) ;    
-    tabMaskAcoustic_diffMean = [tabMaskAcoustic; mean(toPlot,2)'] ;
+    
+    tabMaskAcoustic_diffMean = [tabMaskAcoustic_diffMean; toPlot(:)'] ;
+    maxSR = [maxSR max(tabMaskAcoustic_diffMean(:))] ;
+    
     %toPlot = interp2(toPlot,4) ;    
     XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
     XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+%     YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+%     YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = scalePos ;
+    YTick_labels = scaleLabels ;
     plot_sr(toPlot,300*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;
     colormap(customcolormap_preset('red-white-blue'));
 
     title(num2str(iSubject));
-    tabMaskAcoustic_meanPost = [tabMaskAcoustic; mean(toPlot,2)'] ;
     saveas(gcf,['./out/Acoustics/diff_mean/scaleRate/diff_mean',num2str(iFile),'_sub#_',num2str(iSubject)],'epsc')
-    close all    
+    close all
     % diff_mean
 end
+
+
+
+%% continuum subjects BAcc
+figure;
+%[~, i_PCA1] = sort(scores(:,1)) ;
+path = './out/benchmark_pca/subject_level/30_PCs/';
+load(strcat(path,'/BAcc_3D.mat'));
+mean_acc = mean(tabBAcc_3d,2) ;
+[~, index] = sort(mean_acc) ;
+
+for iFile = 1:length(vecSubject) 
+    iFile
+    subplot(3,8,iFile)    
+    toPlot = reshape(tabMaskAcoustic_diffMean(index(iFile),:),Ny,Nx) ;
+%     IPCA_PL = inversePcaPythonLike([scores(i_PCA1(iFile),1) scores(iFile,2)], eigenVectors, 0, mu, sigma, mean_) ;
+%     canonicalMap_reconstruct = rot90(mean(reshape(IPCA_PL(1,:),Nx,Ny,Nz),dim2avg)) ;
+%     subplot(121)
+    toPlot = interp2(toPlot,4) ;
+    imagesc(toPlot,[-.2 .2]);
+    if iFile ~= 1
+        axis('square')
+        set(gcf,'position',[10,10,450,230])
+%     subplot(122)
+%     imagesc(canonicalMap_reconstruct,[-.01 .01]) ;
+        title(num2str((iFile))) ;
+        set(gca,'xtick',[],'ytick',[]) 
+        colormap(customcolormap_preset('red-white-blue'));
+    else
+        title(num2str((iFile))) ;
+        colormap(customcolormap_preset('red-white-blue'));        
+        set(gcf,'position',[10,10,450,230])
+        axis('square')
+        set(gca,'xtick',[1 337],'XTickLabel', [-32 32],'ytick',[1 113],'YTickLabel', [8 1],'fontsize',8)        
+        xlabel('Rate (Hz)')
+        ylabel('Scale (c/o)')
+    end
+end
+colorbar('Position',[0.91 0.168 0.013 0.7]); 
+
+saveas(gcf,['./out/Acoustics/diff_mean/scaleRate/diffMeanSubjectMasks_sorted_from_BAcc'],'epsc')
+%close all;
 
 
 % %% continuum subjects PCA_1
@@ -479,23 +552,6 @@ function [output] = inversePcaPythonLike(X, eigenVectors, whitened, mu, sigma, m
     output = X * eigenVectors' + repmat(mean_,length(X),1) ;
 end
 
-function plot_sr(im, cl, xlabel_, ylabel_, XTick_pos,...
-                   XTick_labels,YTick_pos, YTick_labels, show)
-    if show==1
-        figure('visible','off');
-    else
-        figure();
-    end
-       
-    imagesc(im, cl);
-    xlabel(xlabel_);
-    ylabel(ylabel_);
-    colorbar;
-    set(gca, 'XTick', XTick_pos, 'XTickLabel', XTick_labels); % 10 ticks 
-    set(gca, 'YTick', YTick_pos, 'YTickLabel', YTick_labels); % 20 ticks
-    colormap(customcolormap_preset('red-white-blue'));
-    axis('square')
-end
 
 %% function that gives the coefficient of determination
 function R2 = r2_score(X,Y)

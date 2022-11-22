@@ -74,6 +74,7 @@ for iFile, filename in enumerate(sorted(fileList)):
   daySession = int(dataFor['daySession'])+int(shift)    
   tabDaySession.append(int(daySession))
   print()
+  print(dataFor['durationSegment'])
   print(stanford.shape)
   print(np.asarray(subjectNumbers).shape)
   print(int(dataFor['subjectNb']))

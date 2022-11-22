@@ -3,7 +3,10 @@ clearvars ;
 clc;
 % initialize sound path
 addpath(genpath('./')); 
-fileList = dir(strcat('./out/out_03_classicationSubjectLevel_AllMaps/*_3d.mat')) ;
+%fileList = dir(strcat('./out/out_03_classicationSubjectLevel_AllMaps/*_3d.mat')) ;
+path = './out/benchmark_pca/subject_level/30_PCs/';
+%%
+fileList = dir(strcat(path,'/*_3d.mat')) ;
 fid=fopen('./out/results_SSS_PCA.txt','w');
 
 % strf parameters
@@ -22,29 +25,82 @@ SSS = [[1,3,3,1,1,1,1,3,1,2,1,3,4,3,2,3,1,1,3,1,1,1];...
              [2,2,6,1,3,5,4,2,3,3,2,3,6,6,3,5,3,5,4,2,6,3]]'  ;  
 sleepLoss = mean(SSS(:,(5:8)),2) ;     
 
-load('./out/out_03_classicationSubjectLevel_AllMaps/BAcc_3D.mat'); % load balanced accuracies
+load(strcat(path,'/BAcc_3D.mat')); % load balanced accuracies
 vecSubject = (1:22); 
-
+warning ('off','all');
 % initialisations
 tabMasks = zeros(length(vecSubject),128*8*22) ;
 tabSubject = zeros(1,length(vecSubject)) ;
-averagedCorr = zeros(1,length(vecSubject)) ;
+averagedCorr   = zeros(1,length(vecSubject)) ;
+averagedCorr_2 = zeros(1,length(vecSubject)) ;
+averaged_p     = zeros(1,length(vecSubject)) ;
+averaged_bf10  = zeros(1,length(vecSubject)) ;
 maskTot = [] ;
 stanfordAllMaps = [] ;
 N_seed = 1 ;
 
 % load canonical maps
 for iFile = 1:length(vecSubject) %1:length(fileList) 
-    load(fileList(vecSubject(iFile)).name);
+    iFile
+    load(strcat(path,fileList(vecSubject(iFile)).name));
     canonicalMap = nanmean(canonicalAllMaps(:,:),1) ;
     [rr,cc] = size(canonicalAllMaps);
     tabMasks(iFile,:) = canonicalMap(:) ;
     tabSubject(iFile) = iSubject ;
     stanfordAllMaps = [stanfordAllMaps; repmat(SSS(iFile,:),[N_seed 1])] ;
+    [r_tab,p_tab,BF10_tab] = corrBF10_tab(canonicalAllMaps(end-(rr-1):end,:)) ;
+    
     triu_ = triu(corr(canonicalAllMaps(end-(rr-1):end,:)'),1) ;
     triu_(triu_==0) = [] ;
     averagedCorr(iFile) = nanmean(triu_) ;
+    
+    triu_ = triu(r_tab,1) ;
+    triu_(triu_==0) = [] ;    
+    averagedCorr_2(iFile) = nanmean(triu_) ;
+    
+    triu_ = triu(p_tab,1) ;
+    triu_(triu_==0) = [] ;    
+    averaged_p(iFile) = nanmean(triu_) ;    
+    
+    triu_ = triu(BF10_tab,1) ;
+    triu_(triu_==0) = [] ;    
+    averaged_bf10(iFile) = nanmean(triu_) ;    
 end
+
+
+%% PCA on Masks
+figure
+load(strcat(path,'/BAcc_3D.mat'));
+mean_acc = mean(tabBAcc_3d,2) ;
+[~, index] = sort(mean_acc) ;
+tabSubjectOrderBAcc = tabSubject(index) ;
+[eigenVectors, mu, sigma, mean_, scores, explained] = pcaPythonLike(tabMasks, 2, 0) ;
+outTxt = [] ;
+disp(outTxt) ;
+fprintf(fid, [outTxt '\n']);
+
+%scatter((scores(:,1)-mu)/sigma,(scores(:,2)-mu)/sigma)
+dx = (max(scores(:))-min(scores(:))) / 1000 ;
+text((scores(index,1)-mu)/sigma+dx, (scores(index,2)-mu)/sigma+dx, num2cell(index), 'fontsize',18);
+set(gca, 'fontsize',18); % 20 ticks
+xlabel('Interpretation - PCA 1')
+ylabel('Interpretation - PCA 2')
+%title('PCA on interpretations')
+axis([-2.5 2.5 -2.5 2.5])
+grid on;
+saveas(gcf,['./out/PCA_space'],'epsc')
+% close all;
+
+figure;
+plot(explained,'-o');
+xlabel('Number of PCA dimensions')
+ylabel('Explained variance')
+grid on;
+set(gca, 'fontsize',18); % 20 ticks
+XTick_pos    = [1, 2, 3, 5, 10 15 20 25 30] ;
+XTick_labels = XTick_pos ;
+set(gca, 'XTick', XTick_pos, 'XTickLabel', XTick_labels,'fontsize',18);
+saveas(gcf,['./out/explained_variance_nb_dim_PCA'],'epsc')
 
 %% consistency of interpretations
 subplot(121);plot(averagedCorr);hold on;
@@ -58,18 +114,23 @@ xlabel('Consistency (avg pairwise corr btw interpretations)');ylabel('Averaged B
 outTxt = ['Correlation Consistency/BAcc: BF10=',num2str(BF10_SSS_BAcc),', r=',num2str(r_SSS_BAcc),', p=',num2str(p_SSS_BAcc)];
 disp(outTxt) ;
 fprintf(fid, [outTxt '\n']);
+
 saveas(gcf,['./out/correlation_consistency_BAcc'],'epsc')
-close all;
+%close all;
 
 %% correlation BAcc / SSS
-scatter(mean(tabBAcc_3d,2),sleepLoss);axis([.5 1 1 7]);axis('square');
-xlabel('Averaged Balanced Accuracy');ylabel('Sleepiness (Stanford Scale)')
+figure
+%scatter(mean(tabBAcc_3d,2),sleepLoss);
+axis([.5 1.03 1 7 ]);axis('square');
+text(mean_acc(index), sleepLoss(index), num2cell((1:22)),'fontsize',14);
+xlabel('Averaged Balanced Accuracy');ylabel('Mean SSS Day 3')
 [BF10_SSS_BAcc,r_SSS_BAcc,p_SSS_BAcc] = corrBF(mean(tabBAcc_3d,2),sleepLoss) ;
 outTxt = ['Correlation SSS/BAcc: BF10=',num2str(BF10_SSS_BAcc),', r=',num2str(r_SSS_BAcc),', p=',num2str(p_SSS_BAcc)];
+set(gca, 'fontsize',18); % 20 ticks
+saveas(gcf,['./out/correlation_SSS_BAcc'],'epsc')
 disp(outTxt) ;
 fprintf(fid, [outTxt '\n']);
-saveas(gcf,['./out/correlation_SSS_BAcc'],'epsc')
-close all;
+%close all;
 
 
 %% def sub representations Scale-Rate / Frequency-Rate / Frequency-Scale
@@ -80,43 +141,25 @@ Ny = 8;
 Nx = 22;
 Nz = 128;
 
+
 tabMasks = reshape(tabMasks_sub,length(vecSubject),Nx*Ny*Nz) ;
 dim2avg = 3 ;
 X = rates;
 Y = scales;
 
-%% PCA on Masks
-figure
-load('./out/out_03_classicationSubjectLevel_AllMaps/BAcc_3D.mat');
-mean_acc = mean(tabBAcc_3d,2) ;
-[~, index] = sort(mean_acc) ;
-tabSubjectOrderBAcc = tabSubject(index) ;
-[eigenVectors, mu, sigma, mean_, scores, explained] = pcaPythonLike(tabMasks, 2, 0) ;
-outTxt = [] ;
-disp(outTxt) ;
-fprintf(fid, [outTxt '\n']);
-
-%scatter((scores(:,1)-mu)/sigma,(scores(:,2)-mu)/sigma)
-dx = (max(scores(:))-min(scores(:))) / 1000 ;
-text((scores(:,1)-mu)/sigma+dx, (scores(:,2)-mu)/sigma+dx, num2cell(tabSubjectOrderBAcc));
-xlabel('PC1')
-ylabel('PC2')
-%title('PCA on interpretations')
-axis([-2.5 2.5 -2 2])
-grid on;
-saveas(gcf,['./out/PCA_space'],'epsc')
-close all;
-
 %% continuum subjects with real maps PCA_1
 [~, i_PCA1] = sort(scores(:,1)) ;
-
+scaleLabels = fliplr([1 2 4 8]) ;
+scalePos    = sort(9-[2 4 6 8])*(2^4-1) ;
 for iFile = 1:length(vecSubject) 
-    load(fileList(i_PCA1(iFile)).name);
+    load(fileList(index(iFile)).name);
     toPlot = rot90(interp2(mean(reshape(tabMasks(i_PCA1(iFile),:),Nx,Ny,Nz),dim2avg),4)) ;
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+%     YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+%     YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos    = scalePos ;
+    YTick_labels = scaleLabels ;    
     plot_sr(toPlot,10*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;    
@@ -128,25 +171,42 @@ close all;
 %% continuum subjects BAcc
 figure;
 %[~, i_PCA1] = sort(scores(:,1)) ;
+% tlo = tiledlayout(3,8) ;
 
 for iFile = 1:length(vecSubject) 
-    subplot(3,8,iFile)    
+    subplot(3,8,iFile)
     load(fileList(index(iFile)).name);    
     canonicalMap = rot90(mean(reshape(tabMasks(index(iFile),:),Nx,Ny,Nz),dim2avg)) ;
 %     IPCA_PL = inversePcaPythonLike([scores(i_PCA1(iFile),1) scores(iFile,2)], eigenVectors, 0, mu, sigma, mean_) ;
 %     canonicalMap_reconstruct = rot90(mean(reshape(IPCA_PL(1,:),Nx,Ny,Nz),dim2avg)) ;
 %     subplot(121)
-    imagesc(canonicalMap,[-.01 .01]);
-    axis('square')
-    set(gcf,'position',[10,10,450,230])
-    
+%     h(iFile) = nexttile(tlo);
+    toPlot = interp2(canonicalMap,4) ;
+    h = imagesc(toPlot,[-.01 .01]);
+
+    if iFile ~= 1
+        axis('square')
+        set(gcf,'position',[10,10,450,230])
 %     subplot(122)
 %     imagesc(canonicalMap_reconstruct,[-.01 .01]) ;
-    title(num2str(iSubject)) ;
-    colormap(customcolormap_preset('red-white-blue'));
+        title(num2str((iFile))) ;
+        set(gca,'xtick',[],'ytick',[]) 
+        colormap(customcolormap_preset('red-white-blue'));
+    else
+        title(num2str((iFile))) ;
+        colormap(customcolormap_preset('red-white-blue'));        
+        set(gcf,'position',[10,10,450,230])
+        axis('square')
+        set(gca,'xtick',[1 337],'XTickLabel', [-32 32],'ytick',[1 113],'YTickLabel', [8 1],'fontsize',8)        
+        xlabel('Rate (Hz)')
+        ylabel('Scale (c/o)')
+    end
 end
+
+colorbar('Position',[0.91 0.168 0.013 0.7]); 
+
 saveas(gcf,['./out/ScaleRate/subjectMasks_sorted_from_BAcc'],'epsc')
-close all;
+%close all;
 
 
 %% continuum subjects PCA_1
@@ -172,8 +232,8 @@ saveas(gcf,['./out/ScaleRate/subjectMasks_sorted_from_PC1'],'epsc')
 close all;
 
 %% continuum with idealized masks PCA1
-continuum_PC1 = [linspace(-5, 5, 30)' zeros(30,1)] ;
-continuum_PC2 = [zeros(30,1) linspace(-5, 5, 30)'] ;
+continuum_PC1 = [linspace(-2, 2, 30)' zeros(30,1)] ;
+continuum_PC2 = [zeros(30,1) linspace(-2, 2, 30)'] ;
 [output_PC1] = inversePcaPythonLike(continuum_PC1, eigenVectors, 0, mu, sigma, mean_) ;
 [output_PC2] = inversePcaPythonLike(continuum_PC2, eigenVectors, 0, mu, sigma, mean_) ;
 
@@ -182,7 +242,7 @@ fig = figure;
 for iFile = 1:length(continuum_PC1)
     subplot(4,8,iFile)
     toPlot_PC1 = squeeze(mean(reshape(output_PC1(iFile,:),Nx,Ny,Nz),dim2avg)) ;
-    imagesc(interp2(rot90(toPlot_PC1),4),5*[-9e-3 9e-3])
+    imagesc(interp2(rot90(toPlot_PC1),4),2*[-9e-3 9e-3])
     axis('square')
     
     title(num2str(continuum_PC1(iFile,1)))
@@ -206,7 +266,7 @@ fig = figure;
 for iFile = 1:length(continuum_PC2)
     subplot(4,8,iFile)
     toPlot_PC2 = squeeze(mean(reshape(output_PC2(iFile,:),Nx,Ny,Nz),dim2avg)) ;
-    imagesc(interp2(rot90(toPlot_PC2),4),.5*[-9e-3 9e-3])
+    imagesc(interp2(rot90(toPlot_PC2),4),1*[-9e-3 9e-3])
     title(num2str(continuum_PC2(iFile,2)))
     axis('square')
 
@@ -225,41 +285,47 @@ saveas(gcf,['./out/ScaleRate/idealizedPCA_PC2'],'epsc')
 PC1 = squeeze(var(squeeze(mean(reshape(output_PC1(:,:),30,Nx,Ny,Nz),dim2avg+1)),1)) ;
 PC2 = squeeze(var(squeeze(mean(reshape(output_PC2(:,:),30,Nx,Ny,Nz),dim2avg+1)),1)) ;
 
-figure;
 toPlot = interp2(rot90(PC1),4) ;
 numrc(toPlot,2) ;
 XTick_pos = linspace(1,numrc(toPlot,2),6) ;
 XTick_labels = X(round(linspace(1,length(X),6))) ;
 
-YTick_pos = linspace(1,numrc(toPlot,1),7) ;
-YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
-
-
-plot_sr(toPlot,.05*[-9e-3 9e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
+% YTick_pos = linspace(1,numrc(toPlot,1),7) ;
+% YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+YTick_pos    = scalePos ;
+YTick_labels = scaleLabels ; 
+range = max(toPlot(:)) ;
+plot_sr(toPlot,range*[-1 1], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                    XTick_pos, XTick_labels,...
                    YTick_pos, YTick_labels, 0) ; 
+title('Interpretation PC1 - Variance') ;
 saveas(gcf,['./out/ScaleRate/idealizedPCA_variance_PC1'],'epsc')               
 
 toPlot = interp2(rot90(PC2),4) ;
+range = max(toPlot(:)) ;
+
 numrc(toPlot,2) ;
 XTick_pos = linspace(1,numrc(toPlot,2),6) ;
 XTick_labels = X(round(linspace(1,length(X),6))) ;
-YTick_pos = linspace(1,numrc(toPlot,1),7) ;
-YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
-plot_sr(toPlot,.003*[-9e-3 9e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
+% YTick_pos = linspace(1,numrc(toPlot,1),7) ;
+% YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+YTick_pos    = scalePos ;
+YTick_labels = scaleLabels ; 
+plot_sr(toPlot,range*[-1 1], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                    XTick_pos, XTick_labels,...
                    YTick_pos, YTick_labels, 0) ;
 colormap(customcolormap_preset('red-white-blue'));
+title('Interpretation PC2 - Variance') ;
 saveas(gcf,['./out/ScaleRate/idealizedPCA_variance_PC2'],'epsc')
-close all;
+
 
 %% Marginals of idealized PCA PCs
 figure;
 %subplot(121);
 toPlot_PC1 = interp2(rot90(PC1),4) ;
 toPlot_PC2 = interp2(rot90(PC2),4) ;
-XTick_pos = linspace(1,numrc(toPlot,2),16) ;
-XTick_labels = X(round(linspace(1,length(X),16))) ;
+XTick_pos = linspace(1,numrc(toPlot,2),6) ;
+XTick_labels = X(round(linspace(1,length(X),6))) ;
 plot(mean(toPlot_PC1)./max(mean(toPlot_PC1)));hold on;
 plot(mean(toPlot_PC2)./max(mean(toPlot_PC2)));
 set(gca, 'XTick', XTick_pos, 'XTickLabel', XTick_labels);
@@ -270,7 +336,7 @@ grid(gca,'minor')
 legend('PC1','PC2')
 axis('square')
 saveas(gcf,['./out/ScaleRate/idealizedPCA_variance_marginals_rate'],'epsc')
-close all;
+%close all;
 
 figure;
 toPlot_PC1 = interp2(rot90(PC1),4) ;
@@ -287,7 +353,7 @@ grid(gca,'minor')
 legend('PC1','PC2')
 axis('square')
 saveas(gcf,['./out/ScaleRate/idealizedPCA_variance_marginals_scale'],'epsc')
-close all;
+%close all;
 
 %% correlation between SSS and PCA Principal Components
 [BF10_pc1,r_pc1,p_pc1] = corrBF(sleepLoss,scores(:,1));
@@ -300,35 +366,38 @@ disp(outTxt) ;
 fprintf(fid, [outTxt '\n']);
 
 figure
-subplot(121)
 %scatter(sleepLoss,scores(:,1))
-coeff__ = polyfit(sleepLoss,scores(:,1),1) ;
+coeff__ = polyfit(scores(:,1),sleepLoss,1) ;
 
 dx = (max(sleepLoss)-min(sleepLoss)) / 10000*30;
-text(sleepLoss+dx, scores(:,1)+dx, num2cell(tabSubjectOrderBAcc));
-xlabel('Mean SSS Day 3')
-ylabel('PC1')
+text(scores(index,1)+dx, sleepLoss(index)+dx, num2cell(index),'fontsize',14);
+ylabel('Mean SSS Day 3')
+xlabel('Interpretation - PCA 1')
 
 hold on;
-plot(linspace(1,7,100),polyval(coeff__,linspace(1,7,100)),'k')
-axis([1 7 -3 3])
+plot(linspace(-3,3,100),polyval(coeff__,linspace(-3,3,100)),'k')
+axis([-3 3 1 7])
 axis('square')
+set(gca,'fontsize',18)
+saveas(gcf,['./out/correlation_SSS_PC1'],'epsc')
 
-subplot(122)
+figure
 %scatter(sleepLoss,scores(:,2))
-coeff__ = polyfit(sleepLoss,scores(:,2),1) ;
+coeff__ = polyfit(scores(:,2),sleepLoss,1) ;
 dx = (max(sleepLoss)-min(sleepLoss)) / 10000*30;
-text(sleepLoss+dx, scores(:,2)+dx, num2cell(tabSubjectOrderBAcc));
+text(scores(index,2)+dx,sleepLoss(index)+dx, num2cell(index),'fontsize',14);
 xlabel('Mean SSS Day 3')
-ylabel('PC2')
+ylabel('Interpretation - PCA 2')
+set(gca,'fontsize',18)
+
 
 hold on;
-plot(linspace(1,7,100),polyval(coeff__,linspace(1,7,100)),'k')
-axis([1 7 -3 3])
+plot(linspace(-3,3,100),polyval(coeff__,linspace(-3,3,100)),'k')
+axis([-3 3 1 7 ])
 axis('square')
 
-saveas(gcf,['./out/correlation_SSS_PCs'],'epsc')
-close all;
+saveas(gcf,['./out/correlation_SSS_PC2'],'epsc')
+%close all;
 
 %% linear model cross-validation
 nRepeat = 1000 ;
@@ -383,23 +452,6 @@ function [output] = inversePcaPythonLike(X, eigenVectors, whitened, mu, sigma, m
     output = X * eigenVectors' + repmat(mean_,length(X),1) ;
 end
 
-function plot_sr(im, cl, xlabel_, ylabel_, XTick_pos,...
-                   XTick_labels,YTick_pos, YTick_labels, show)
-    if show==1
-        figure('visible','off');
-    else
-        figure();
-    end
-       
-    imagesc(im, cl);
-    xlabel(xlabel_);
-    ylabel(ylabel_);
-    colorbar;
-    set(gca, 'XTick', XTick_pos, 'XTickLabel', XTick_labels); % 10 ticks 
-    set(gca, 'YTick', YTick_pos, 'YTickLabel', YTick_labels); % 20 ticks
-    colormap(customcolormap_preset('red-white-blue'));
-    axis('square')
-end
 
 %% function that gives the coefficient of determination
 function R2 = r2_score(X,Y)
@@ -448,3 +500,27 @@ nb = r;
         nb = c;
     end
 end
+
+
+%% BF10 corr tab
+
+
+function [r, p, BF10]  = corrBF10_tab(tab)
+    sz = size(tab) ;
+    r = zeros(sz(1),sz(1)) ;
+    p = zeros(sz(1),sz(1)) ;
+    BF10 = zeros(sz(1),sz(1)) ;
+    for i = (1:sz(1))
+        for j = (1:sz(1))
+            [BF10_SSS_BAcc,r_SSS_BAcc,p_SSS_BAcc]...
+                = corrBF(tab(i,:)',tab(j,:)') ;
+            if isinf(BF10_SSS_BAcc)
+                BF10_SSS_BAcc = 1000 ;
+            end
+            r(i,j)    = r_SSS_BAcc ;
+            p(i,j)    = p_SSS_BAcc ;
+            BF10(i,j) = BF10_SSS_BAcc ;
+        end
+    end
+end
+

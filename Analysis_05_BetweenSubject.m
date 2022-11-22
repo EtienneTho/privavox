@@ -24,32 +24,48 @@ fclose(fid);
 %% scale-rate
 X = rates;
 Y = scales;
+scaleLabels = fliplr([1 2 4 8]) ;
+scalePos    = sort(9-[2 4 6 8])*(2^4-1) ;
 canonicalMap = nanmean(canonicalAllMaps(:,:),1) ;
 dim2avg = 3 ;
 toPlot = rot90(interp2(squeeze(mean(reshape(canonicalMap,Nx,Ny,Nz),dim2avg)),4)) ;
-XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-XTick_labels = X(round(linspace(1,length(X),16))) ;
-YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+XTick_labels = X(round(linspace(1,length(X),6))) ;
+% YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+% YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+YTick_pos    = scalePos ;
+YTick_labels = scaleLabels ;
 max_ = max(abs(toPlot(:))) ;
-plot_sr(toPlot,1.2*[-max_ max_], 'Scale (cyc/oct)', 'Frequencies (Hz)',... 
+plot_sr(toPlot,2*[-1e-3 1e-3], 'Rate (Hz)', 'Scale (cyc/oct)',... 
                    XTick_pos, XTick_labels,...
                    YTick_pos, YTick_labels, 0) ;    
 saveas(gcf,['./out/BetweenSubjects/scale_rate_between_subjects'],'epsc')
 
+[rr,cc] = size(canonicalAllMaps);
+triu_ = triu(corr(canonicalAllMaps(end-(rr-1):end,:)'),1) ;
+triu_(triu_==0) = [] ;
+nanmean(triu_) 
+%%
+[r, p, BF10]  = corrBF10_tab(canonicalAllMaps(end-(rr-1):end,:)) 
+
+spectralFlux
 
 %% freq-rate
 X = rates;
 Y = frequencies;
+freqLabels = fliplr([250 500 1000 2000 4000]) ;
+freqPos    = sort(128-floor(24*log2(freqLabels/440)+36))*2^4 ;
 canonicalMap = nanmean(canonicalAllMaps(:,:),1) ;
 dim2avg = 2 ;
 toPlot = rot90(interp2(squeeze(mean(reshape(canonicalMap,Nx,Ny,Nz),dim2avg)),4)) ;
-XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-XTick_labels = X(round(linspace(1,length(X),16))) ;
-YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+XTick_labels = X(round(linspace(1,length(X),6))) ;
+% YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+% YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+YTick_pos = freqPos ;
+YTick_labels = freqLabels ;
 max_ = max(abs(toPlot(:))) ;
-plot_sr(toPlot,1.2*[-max_ max_], 'Rate (Hz)', 'Frequency (Hz)',... 
+plot_sr(toPlot,2*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                    XTick_pos, XTick_labels,...
                    YTick_pos, YTick_labels, 0) ;    
 saveas(gcf,['./out/BetweenSubjects/freq_rate_between_subjects'],'epsc')
@@ -66,7 +82,7 @@ XTick_labels = X(round(linspace(1,length(X),16))) ;
 YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
 YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
 max_ = max(abs(toPlot(:))) ;
-plot_sr(toPlot,1.2*[-max_ max_], 'Scale (cyc/oct)', 'Frequency (Hz)',... 
+plot_sr(toPlot,1*[-1e-3 1e-3], 'Scale (cyc/oct)', 'Frequency (Hz)',... 
                    XTick_pos, XTick_labels,...
                    YTick_pos, YTick_labels, 0) ;    
 saveas(gcf,['./out/BetweenSubjects/freq_scale_between_subjects'],'epsc')
@@ -92,24 +108,6 @@ function [output] = inversePcaPythonLike(X, eigenVectors, whitened, mu, sigma, m
         X = X .* sigma + mu ;
     end
     output = X * eigenVectors' + repmat(mean_,length(X),1) ;
-end
-
-function plot_sr(im, cl, xlabel_, ylabel_, XTick_pos,...
-                   XTick_labels,YTick_pos, YTick_labels, show)
-    if show==1
-        figure('visible','off');
-    else
-        figure();
-    end
-       
-    imagesc(im, cl);
-    xlabel(xlabel_);
-    ylabel(ylabel_);
-    colorbar;
-    set(gca, 'XTick', XTick_pos, 'XTickLabel', XTick_labels); % 10 ticks 
-    set(gca, 'YTick', YTick_pos, 'YTickLabel', YTick_labels); % 20 ticks
-    colormap(customcolormap_preset('red-white-blue'));
-    axis('square')
 end
 
 %% function that gives the coefficient of determination
@@ -159,3 +157,27 @@ nb = r;
         nb = c;
     end
 end
+
+%% BF10 corr tab
+
+
+function [r, p, BF10]  = corrBF10_tab(tab)
+    sz = size(tab) ;
+    r = zeros(sz(1),sz(1)) ;
+    p = zeros(sz(1),sz(1)) ;
+    BF10 = zeros(sz(1),sz(1)) ;
+    for i = (1:sz(1))
+        for j = (1:sz(1))
+            [BF10_SSS_BAcc,r_SSS_BAcc,p_SSS_BAcc]...
+                = corrBF(tab(i,:)',tab(j,:)') ;
+            if isinf(BF10_SSS_BAcc)
+                BF10_SSS_BAcc = 1000 ;
+            end
+            r(i,j)    = r_SSS_BAcc ;
+            p(i,j)    = p_SSS_BAcc ;
+            BF10(i,j) = BF10_SSS_BAcc ;
+        end
+    end
+end
+
+

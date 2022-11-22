@@ -49,6 +49,14 @@ sio.savemat(outFolder+'AcousticAnalysis_BetweenSubjects.mat', {'mean_tot':np.asa
                                                                'mean_post': np.asarray(mean_post),
                                                                'diff_mean':  np.asarray(diff_mean)})
 
+labels = np.zeros((Y.shape[0],1))
+labels[Y=='pre']  = 0
+labels[Y=='post'] = 1
+sio.savemat(outFolder+'AcousticAnalysis_BetweenSubjects_all.mat', {'STMs':np.asarray(X),
+                                                                   'labels':np.array(labels),
+                                                                   'subjectNb':np.array(tabSubjectNb)})
+
+
 # per subject
 tabIndex = np.unique(tabSubjectNb)
 

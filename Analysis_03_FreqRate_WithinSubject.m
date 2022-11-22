@@ -3,7 +3,9 @@ clearvars ;
 clc;
 % initialize sound path
 addpath(genpath('./')); 
-fileList = dir(strcat('./out/out_03_classicationSubjectLevel_AllMaps/*_3d.mat')) ;
+%fileList = dir(strcat('./out/out_03_classicationSubjectLevel_AllMaps/*_3d.mat')) ;
+path = './out/benchmark_pca/subject_level/30_PCs/';
+fileList = dir(strcat(path,'/*_3d.mat'));
 fid=fopen('./out/results_SSS_PCA.txt','w');
 
 % strf parameters
@@ -19,11 +21,11 @@ SSS = [[1,3,3,1,1,1,1,3,1,2,1,3,4,3,2,3,1,1,3,1,1,1];...
              [5,3,5,1,3,5,2,5,2,2,2,2,2,3,2,5,3,3,3,3,3,3];...
              [5,3,3,1,2,6,3,3,2,2,2,2,2,3,2,3,2,2,3,3,2,2];...
              [3,3,6,2,2,6,4,3,6,1,3,3,6,3,2,4,4,4,4,2,4,2];...
-             [2,2,6,1,3,5,4,2,3,3,2,3,6,6,3,5,3,5,4,2,6,3]]'  ;
+             [2,2,6,1,3,5,4,2,3,3,2,3,6,6,3,5,3,5,4,2,6,3]]'  ;  
 sleepLoss = mean(SSS(:,(5:8)),2) ;
 
-load('./out/out_03_classicationSubjectLevel_AllMaps/BAcc_3D.mat'); % load balanced accuracies
-vecSubject = (1:22); 
+load(strcat(path,'/BAcc_3D.mat')); % load balanced accuracies
+vecSubject = (1:22);
 
 % initialisations
 tabMasks = zeros(length(vecSubject),128*8*22) ;
@@ -35,40 +37,64 @@ N_seed = 1 ;
 
 % load canonical maps
 for iFile = 1:length(vecSubject) %1:length(fileList) 
-    load(fileList(vecSubject(iFile)).name);
+    load(strcat(path,fileList(vecSubject(iFile)).name));
     canonicalMap = nanmean(canonicalAllMaps(:,:),1) ;
+    [rr,cc] = size(canonicalAllMaps);
     tabMasks(iFile,:) = canonicalMap(:) ;
     tabSubject(iFile) = iSubject ;
     stanfordAllMaps = [stanfordAllMaps; repmat(SSS(iFile,:),[N_seed 1])] ;
-    triu_ = triu(corr(canonicalAllMaps(end-length(canonicalAllMaps(:,1))+1:end,:)'),1) ;
+    triu_ = triu(corr(canonicalAllMaps(end-(rr-1):end,:)'),1) ;
     triu_(triu_==0) = [] ;
     averagedCorr(iFile) = nanmean(triu_) ;
 end
 
-%% consistency of interpretations
-subplot(121);
-plot(averagedCorr);hold on;
-errorbar(mean(tabBAcc_3d,2),std(tabBAcc_3d'));axis('square');
-xlabel('Subject #');ylabel('Accuracy (red) / Consistency (blue)');
-subplot(122);scatter(averagedCorr,mean(tabBAcc_3d,2));axis([.5 1 .5 1]);axis('square');
-xlabel('Consistency (avg pairwise corr btw interpretations)');ylabel('Averaged Balanced Accuracy')
-
-[BF10_Consistency_BAcc,r_Consistency_BAcc,p_Consistency_BAcc] = corrBF(averagedCorr',mean(tabBAcc_3d,2)) ;
-outTxt = ['Correlation Consistency/BAcc: BF10=',num2str(BF10_Consistency_BAcc),', r=',num2str(r_Consistency_BAcc),', p=',num2str(p_Consistency_BAcc)];
+%% PCA on Masks
+figure
+load(strcat(path,'/BAcc_3D.mat'));
+mean_acc = mean(tabBAcc_3d,2) ;
+[~, index] = sort(mean_acc) ;
+tabSubjectOrderBAcc = tabSubject(index) ;
+[eigenVectors, mu, sigma, mean_, scores, explained] = pcaPythonLike(tabMasks, 2, 0) ;
+outTxt = [] ;
 disp(outTxt) ;
 fprintf(fid, [outTxt '\n']);
-saveas(gcf,['./out/correlation_consistency_BAcc'],'epsc')
-close all;
 
-%% correlation BAcc / SSS
-scatter(mean(tabBAcc_3d,2),sleepLoss);axis([.5 1 1 7]);axis('square');
-xlabel('Averaged Balanced Accuracy');ylabel('Sleepiness (Stanford Scale)')
-[BF10_SSS_BAcc,r_SSS_BAcc,p_SSS_BAcc] = corrBF(mean(tabBAcc_3d,2),sleepLoss) ;
-outTxt = ['Correlation SSS/BAcc: BF10=',num2str(BF10_SSS_BAcc),', r=',num2str(r_SSS_BAcc),', p=',num2str(p_SSS_BAcc)];
-disp(outTxt) ;
-fprintf(fid, [outTxt '\n']);
-saveas(gcf,['./out/correlation_SSS_BAcc'],'epsc')
-close all;
+%scatter((scores(:,1)-mu)/sigma,(scores(:,2)-mu)/sigma)
+dx = (max(scores(:))-min(scores(:))) / 1000 ;
+text((scores(index,1)-mu)/sigma+dx, (scores(index,2)-mu)/sigma+dx, num2cell(index), 'fontsize',12);
+set(gca, 'fontsize',18); % 20 ticks
+xlabel('PC1')
+ylabel('PC2')
+%title('PCA on interpretations')
+axis([-2.5 2.5 -2.5 2.5])
+grid on;
+saveas(gcf,['./out/PCA_space'],'epsc')
+% close all;
+
+% %% consistency of interpretations
+% subplot(121);
+% plot(averagedCorr);hold on;
+% errorbar(mean(tabBAcc_3d,2),std(tabBAcc_3d'));axis('square');
+% xlabel('Subject #');ylabel('Accuracy (red) / Consistency (blue)');
+% subplot(122);scatter(averagedCorr,mean(tabBAcc_3d,2));axis([.5 1 .5 1]);axis('square');
+% xlabel('Consistency (avg pairwise corr btw interpretations)');ylabel('Averaged Balanced Accuracy')
+% 
+% [BF10_Consistency_BAcc,r_Consistency_BAcc,p_Consistency_BAcc] = corrBF(averagedCorr',mean(tabBAcc_3d,2)) ;
+% outTxt = ['Correlation Consistency/BAcc: BF10=',num2str(BF10_Consistency_BAcc),', r=',num2str(r_Consistency_BAcc),', p=',num2str(p_Consistency_BAcc)];
+% disp(outTxt) ;
+% fprintf(fid, [outTxt '\n']);
+% saveas(gcf,['./out/correlation_consistency_BAcc'],'epsc')
+% close all;
+
+% %% correlation BAcc / SSS
+% scatter(mean(tabBAcc_3d,2),sleepLoss);axis([.5 1 1 7]);axis('square');
+% xlabel('Averaged Balanced Accuracy');ylabel('Sleepiness (Stanford Scale)')
+% [BF10_SSS_BAcc,r_SSS_BAcc,p_SSS_BAcc] = corrBF(mean(tabBAcc_3d,2),sleepLoss) ;
+% outTxt = ['Correlation SSS/BAcc: BF10=',num2str(BF10_SSS_BAcc),', r=',num2str(r_SSS_BAcc),', p=',num2str(p_SSS_BAcc)];
+% disp(outTxt) ;
+% fprintf(fid, [outTxt '\n']);
+% saveas(gcf,['./out/correlation_SSS_BAcc'],'epsc')
+% close all;
 
 %% def sub representations Scale-Rate / Frequency-Rate / Frequency-Scale
 
@@ -83,38 +109,22 @@ dim2avg = 2 ;
 X = rates;
 Y = frequencies;
 
-%% PCA on Masks
-figure
-load('./out/out_03_classicationSubjectLevel_AllMaps/BAcc_3D.mat');
-mean_acc = mean(tabBAcc_3d,2) ;
-[~, index] = sort(mean_acc) ;
-tabSubjectOrderBAcc = tabSubject(index) ;
-[eigenVectors, mu, sigma, mean_, scores, explained] = pcaPythonLike(tabMasks, 2, 0) ;
-outTxt = [] ;
-disp(outTxt) ;
-fprintf(fid, [outTxt '\n']);
-
-%scatter((scores(:,1)-mu)/sigma,(scores(:,2)-mu)/sigma)
-dx = (max(scores(:))-min(scores(:))) / 1000 ;
-text((scores(:,1)-mu)/sigma+dx, (scores(:,2)-mu)/sigma+dx, num2cell(tabSubjectOrderBAcc));
-xlabel('PC1')
-ylabel('PC2')
-%title('PCA on interpretations')
-axis([-2.5 2.5 -2 2])
-grid on;
-saveas(gcf,['./out/PCA_space'],'epsc')
-% close all;
-
 %% continuum subjects with real maps PCA_1
 [~, i_PCA1] = sort(scores(:,1)) ;
 
 for iFile = 1:length(vecSubject) 
+    X = rates;
+    Y = frequencies;
+    freqLabels = fliplr([250 500 1000 2000 4000]) ;
+    freqPos    = sort(128-floor(24*log2(freqLabels/440)+36))*2^4 ;    
     load(fileList(i_PCA1(iFile)).name);
     toPlot = rot90(interp2(squeeze(mean(reshape(tabMasks(i_PCA1(iFile),:),Nx,Ny,Nz),dim2avg)),4)) ;
-    XTick_pos    = linspace(1,numrc(toPlot,2),16) ;
-    XTick_labels = X(round(linspace(1,length(X),16))) ;
-    YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
-    YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    XTick_pos    = linspace(1,numrc(toPlot,2),6) ;
+    XTick_labels = X(round(linspace(1,length(X),6))) ;
+    % YTick_pos    = linspace(1,numrc(toPlot,1),7) ;
+    % YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
+    YTick_pos = freqPos ;
+    YTick_labels = freqLabels ;
     plot_sr(toPlot,20*[-1e-3 1e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                        XTick_pos, XTick_labels,...
                        YTick_pos, YTick_labels, 1) ;    
@@ -127,8 +137,8 @@ close all;
 figure;
 [~, i_PCA1] = sort(scores(:,1)) ;
 
-for iFile = 1:length(vecSubject) 
-    subplot(3,8,iFile)    
+for iFile = 1:length(vecSubject)
+    subplot(3,8,iFile)
     load(fileList(i_PCA1(iFile)).name);    
     canonicalMap = rot90(interp2(squeeze(mean(reshape(tabMasks(i_PCA1(iFile),:),Nx,Ny,Nz),dim2avg)),4)) ;
 %     IPCA_PL = inversePcaPythonLike([scores(i_PCA1(iFile),1) scores(iFile,2)], eigenVectors, 0, mu, sigma, mean_) ;
@@ -194,11 +204,43 @@ for iFile = 1:length(continuum_PC2)
 end
 saveas(gcf,['./out/FreqRate/idealizedPCA_PC2'],'epsc')
 
+%% continuum subjects BAcc
+figure;
+%[~, i_PCA1] = sort(scores(:,1)) ;
+
+for iFile = 1:length(vecSubject) 
+    subplot(3,8,iFile)    
+    load(fileList(index(iFile)).name);    
+    canonicalMap = squeeze(rot90(mean(reshape(tabMasks(index(iFile),:),Nx,Ny,Nz),dim2avg))) ;
+    toPlot = rot90(interp2(canonicalMap,4)) ;
+    imagesc(toPlot,[-.01 .01]);
+    if iFile ~= 1
+        axis('square')
+        set(gcf,'position',[10,10,450,230])
+        title(num2str((iFile))) ;
+        set(gca,'xtick',[],'ytick',[]) 
+        colormap(customcolormap_preset('red-white-blue'));
+    else
+        title(num2str((iFile))) ;
+        colormap(customcolormap_preset('red-white-blue'));        
+        set(gcf,'position',[10,10,450,230])
+        axis('square')
+        set(gca,'xtick',[1 337],'XTickLabel', [-32 32],'ytick',[1 2033],'YTickLabel', [8000 125],'fontsize',8)        
+        xlabel('Rate (Hz)')
+        ylabel('Frequency (Hz)')
+    end
+end
+colorbar('Position',[0.91 0.168 0.013 0.7]); 
+
+saveas(gcf,['./out/FreqRate/subjectMasks_sorted_from_BAcc'],'epsc')
+%close all;
+
+
 %% Variance of idealized PCA
 PC1 = squeeze(var(squeeze(mean(reshape(output_PC1(:,:),30,Nx,Ny,Nz),dim2avg+1)),1)) ;
 PC2 = squeeze(var(squeeze(mean(reshape(output_PC2(:,:),30,Nx,Ny,Nz),dim2avg+1)),1)) ;
 
-figure;
+
 toPlot = interp2(rot90(PC1),4) ;
 numrc(toPlot,2) ;
 XTick_pos = linspace(1,numrc(toPlot,2),6) ;
@@ -209,7 +251,7 @@ YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
 
 plot_sr(toPlot,.2*[-9e-3 9e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                    XTick_pos, XTick_labels,...
-                   YTick_pos, YTick_labels, 1) ;              
+                   YTick_pos, YTick_labels, 0) ;              
 saveas(gcf,['./out/FreqRate/idealizedPCA_variance_PC1'],'epsc')
 toPlot = interp2(rot90(PC2),4) ;
 numrc(toPlot,2) ;
@@ -219,7 +261,7 @@ YTick_pos = linspace(1,numrc(toPlot,1),7) ;
 YTick_labels = fliplr(Y(round(linspace(1,length(Y),7)))) ;
 plot_sr(toPlot,.2*[-9e-3 9e-3], 'Rate (Hz)', 'Frequency (Hz)',... 
                    XTick_pos, XTick_labels,...
-                   YTick_pos, YTick_labels, 1) ;
+                   YTick_pos, YTick_labels, 0) ;
 colormap(customcolormap_preset('red-white-blue'));
 saveas(gcf,['./out/FreqRate/idealizedPCA_variance_PC2'],'epsc')
 close all;
