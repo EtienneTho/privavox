@@ -23,7 +23,6 @@ plot(ones(1,24)*0.5,'k','linewidth',2)
 hold on;
 errorbar(11,.5,.0,'r');
 hold off;
-% errorbar(0,0.7856617647058823,.028385114921996496,'Color','k')
 addpath('./lib') ;
 xlabel('Participant #'); % xlabel
 ylabel('Balanced Accuracy'); %ylabel

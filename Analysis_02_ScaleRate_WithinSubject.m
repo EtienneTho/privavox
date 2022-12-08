@@ -3,7 +3,6 @@ clearvars ;
 clc;
 % initialize sound path
 addpath(genpath('./')); 
-%fileList = dir(strcat('./out/out_03_classicationSubjectLevel_AllMaps/*_3d.mat')) ;
 path = './out/benchmark_pca/subject_level/30_PCs/';
 %%
 fileList = dir(strcat(path,'/*_3d.mat')) ;

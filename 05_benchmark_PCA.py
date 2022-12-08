@@ -1,6 +1,3 @@
-# from sklearnex import patch_sklearn
-# patch_sklearn(["SVC"])
-
 from timeit import default_timer as timer
 import numpy as np 
 import glob 
@@ -17,10 +14,6 @@ import functions
 import os
 import shutil
 
-# from numba import jit
-# import pingouin as pg
-
-# @jit(nopython=True)
 fileList = glob.glob("./stmtf/*.pkl") #stmtf
 tabStrf  = []
 tabSession = []
@@ -37,14 +30,10 @@ data = pickle.load(open(str(dataFolder)+'data.pkl', 'rb'))
 tabStrf = data['tabStrf']
 tabStrf = tabStrf / np.amax(tabStrf)
 tabSession = data['tabSession']
-# tabDaySession = data['daySession']
 tabSubjectNb = data['tabSubjectNb']
 del data
 tabMeanAccuracy = []
 tabStdAccuracy = []
-
-
-# print(dir())
 
 tabStrf = np.asarray(tabStrf)
 tabSession = np.asarray(tabSession)
@@ -52,12 +41,7 @@ tabSubjectNb = np.asarray(tabSubjectNb)
 subjectNbTab = np.unique(tabSubjectNb) # unique subject tab
 tabDaySession = np.asarray(tabDaySession)
 
-
-# label to classify
 class_ = tabSession
-# print(class_)
-
-# PCA on data
 n_components_tab = [3, 5, 10, 20, 30, 40, 50, 60, 70]
 
 scoreMeanTab = []

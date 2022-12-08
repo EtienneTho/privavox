@@ -5,11 +5,6 @@ import matplotlib.pyplot as plt
 import functions
 import scipy.io as sio
 
-## -32, -22.6, -16, -11.3, -8, -5.70, -4, -2, -1, -.5, -.25, .25, .5, 1, 2, 4, 5.70, 8, 11.3, 16, 22.6, 32
-# def dprimemized(tabA, tabB):
-#     dprimeTab = (np.mean(np.asarray(tabA),axis=0) - np.mean(np.asarray(tabB),axis=0)) / (np.sqrt(1/2*(np.std(np.asarray(tabA),axis=0)**2+np.std(np.asarray(tabB),axis=0)**2)))
-#     return dprimeTab
-
 fileList = glob.glob("./stmtf/*.pkl")
 tabStrf  = []
 tabSession = []
@@ -79,17 +74,3 @@ for index in tabIndex:
                                                                'mean_post': np.asarray(mean_post),
                                                                'diff_mean':  np.asarray(diff_mean),
                                                                'iSubject': np.asarray(iSubject)})
-
-# fields of pickles files
-# 'strf': strf_avgTime,
-# 'session': session,
-# 'subjectNb': subjectNb,
-# 'daySession': daySession,
-# 'iSegment': iSegment,
-# 'durationSegment': durationSegment,
-# 'filename': filename,
-# 'fs': fs,
-# 'nbSegment': nbSegment,
-# 'lengthAudioSample': len(audio)
-
-

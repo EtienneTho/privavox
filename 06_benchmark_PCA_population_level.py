@@ -1,6 +1,3 @@
-# from sklearnex import patch_sklearn
-# patch_sklearn(["SVC"])
-
 from timeit import default_timer as timer
 import numpy as np 
 import glob 
@@ -17,10 +14,6 @@ import functions
 import os
 import shutil
 
-# from numba import jit
-# import pingouin as pg
-
-# @jit(nopython=True)
 fileList = glob.glob("./stmtf/*.pkl") #stmtf
 tabStrf  = []
 tabSession = []
@@ -42,9 +35,6 @@ tabSubjectNb = data['tabSubjectNb']
 del data
 tabMeanAccuracy = []
 tabStdAccuracy = []
-
-
-# print(dir())
 
 tabStrf = np.asarray(tabStrf)
 tabSession = np.asarray(tabSession)
@@ -118,6 +108,7 @@ for iComponent, n_components in enumerate(n_components_tab):
     # scores = cross_val_score(SVC(kernel='rbf',gamma=clf.best_params_['gamma'], C=clf.best_params_['C']), X_pca_train, Y_train, cv=cv)
     Y_test_pred = clf.predict(pca_optimal_dim.transform(X_test))
     tabBAccTemp.append(balanced_accuracy_score(Y_test,Y_test_pred))
+
     # interpretation stim+pseudo-noise
     N = 100
     dimOfinput = (128,8,22) # dimension of the input representation
@@ -129,7 +120,6 @@ for iComponent, n_components in enumerate(n_components_tab):
     probingSamples, _ = proise_v2.generateProbingSamples(x_train_set = X_train, x_test_set = X_train, dimOfinput=dimOfinput, probingMethod = probingMethod, samplesMethod = samplesMethod, nDim_pca = nDim_pca, nbRevcorTrials = nbRevcorTrials)
     data2transform = probingSamples/2 + np.tile(X_train,(N,1))/2
     print(data2transform.shape)
-    # X_probingSamples_pca = pca_optimal_dim.transform(probingSamples/2 + np.tile(X_train,(N,1))/2)  
 
     X_probingSamples_pca_1 = pca_optimal_dim.transform(data2transform[0:int(data2transform.shape[0]/2),:])
     y_pred = clf.predict(X_probingSamples_pca_1)
@@ -149,6 +139,7 @@ for iComponent, n_components in enumerate(n_components_tab):
     del canonicalMap
     end = timer()
     print('Elapsed time:'+str(end-start))
+    
   sio.savemat(path+'AllMaps_3d.mat', {'canonicalAllMaps': np.asarray(tabInterpBySubject), 'nDim_optimal_pca_tab':np.asarray(nDim_optimal_pca_tab), 'explained_variance':np.sum(pca_optimal_dim.explained_variance_ratio_)})
   # sio.savemat(outFolder+str(iSubject).zfill(3)+'_masks_3d.mat', {'canonicalMap': np.mean(canonicalMap), 'canonicalAllMaps': np.asarray(tabInterpBySubject), 'iSubject': iSubject})
   tabBAcc.append(tabBAccTemp)

@@ -2,21 +2,7 @@ import numpy as np
 import glob 
 import pickle
 import functions
-import matplotlib.pyplot as plt  
-
-
-# from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, cross_val_predict, GridSearchCV
-# from sklearn.svm import SVC
-# from sklearn.neighbors import KNeighborsClassifier
-# from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-# import scipy.signal as sg
-# from scipy.ndimage import gaussian_filter
-# from sklearn.decomposition import PCA
-# from scipy import stats
-# import os, random
-# from scipy.stats import rv_discrete
-# from sklearn.preprocessing import RobustScaler
-# import scipy.io as sio
+import matplotlib.pyplot as plt 
 
 fileList = glob.glob("./stmtf/*.pkl") #stmtf
 tabStrf  = []

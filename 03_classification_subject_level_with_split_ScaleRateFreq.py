@@ -1,6 +1,3 @@
-# from sklearnex import patch_sklearn
-# patch_sklearn(["SVC"])
-
 from timeit import default_timer as timer
 import numpy as np 
 import glob 
@@ -14,10 +11,7 @@ from scipy import stats
 import scipy.io as sio
 from lib import proise_v2
 import functions
-# from numba import jit
-# import pingouin as pg
 
-# @jit(nopython=True)
 fileList = glob.glob("./stmtf/*.pkl") #stmtf
 tabStrf  = []
 tabSession = []
@@ -73,21 +67,6 @@ nbRates = 22
 nbScales = 8
 print("n component")
 
-# for n_components in n_components_tab:
-#   # print(str(n_components))
-#   pca2store = PCA(n_components=n_components, svd_solver='auto', whiten=True).fit(tabStrf)
-#   print(np.cumsum(pca2store.explained_variance_ratio_))
-#   pca_tab.append(pca2store)
-#   exp_ratio = np.cumsum(pca2store.explained_variance_ratio_)
-#   exp_ratio[exp_ratio<.99] = 1000
-#   nDim_optimal_pca = np.argmin(exp_ratio)
-#   print('nb optimal dims :'+str(nDim_optimal_pca))  
-
-  # print('explained variance :'+str(np.cumsum(pca2store.explained_variance_ratio_)))
-  # exp_ratio = np.cumsum(pca2store.explained_variance_ratio_)
-  # exp_ratio[exp_ratio<.9] = 1000
-
-  # print(np.argmin(exp_ratio))
 tabBAcc = []
 nDim_optimal_pca_tab = []
 Ntimes = 1
@@ -106,16 +85,6 @@ for iSubject in subjectNbTab:
     del X
     del Y
     print(X_train.shape)
-    # n_components = X_train.shape[0]
-    # pca = PCA(n_components=n_components, svd_solver='auto', whiten=True).fit(X_train)
-    # print('explained variance :'+str(np.sum(pca.explained_variance_ratio_)))
-    # exp_ratio = np.cumsum(pca.explained_variance_ratio_)
-    # exp_ratio[exp_ratio<.99] = 1000
-    # nDim_optimal_pca = np.argmin(exp_ratio)
-    # print('nb optimal dims :'+str(nDim_optimal_pca))
-    # nDim_optimal_pca_tab.append(nDim_optimal_pca)
-    # pca_optimal_dim = PCA(n_components=nDim_optimal_pca, svd_solver='auto', whiten=True).fit(X_train)
-    # print('explained variance optimal dim :'+str(np.sum(pca_optimal_dim.explained_variance_ratio_)))
 
     # for n_components in n_components_tab:
     for count, n_components in enumerate(n_components_tab):
@@ -161,9 +130,6 @@ for iSubject in subjectNbTab:
       y_pred = np.concatenate((y_pred,clf.predict(X_probingSamples_pca_2)))
 
       del X_probingSamples_pca_2
-      # X_probingSamples_pca = np.concatenate((X_probingSamples_pca_1,X_probingSamples_pca_1),axis=0)
-      # y_pred = clf.predict(X_probingSamples_pca)
-
 
       responses_ = np.squeeze((y_pred == np.tile(Y_train,(1,N))) & (np.tile(Y_train,(1,N)) == 'post'))
       canonicalMap = []

@@ -1,6 +1,3 @@
-# from sklearnex import patch_sklearn
-# patch_sklearn(["SVC"])
-
 from timeit import default_timer as timer
 import numpy as np 
 import glob 
@@ -14,10 +11,7 @@ from scipy import stats
 import scipy.io as sio
 from lib import proise_v2
 import functions
-# from numba import jit
-# import pingouin as pg
 
-# @jit(nopython=True)
 fileList = glob.glob("./stmtf/*.pkl") #stmtf
 tabStrf  = []
 tabSession = []
@@ -40,19 +34,13 @@ del data
 tabMeanAccuracy = []
 tabStdAccuracy = []
 
-
-# print(dir())
-
 tabStrf = np.asarray(tabStrf)
 tabSession = np.asarray(tabSession)
 tabSubjectNb = np.asarray(tabSubjectNb)
 subjectNbTab = np.unique(tabSubjectNb) # unique subject tab
 tabDaySession = np.asarray(tabDaySession)
 
-
-# label to classify
 class_ = tabSession
-# print(class_)
 
 # PCA on data
 n_components_tab = [3, 15, 30, 50, 100, 150, 200, 250]
@@ -73,9 +61,6 @@ nbRates = 22
 nbScales = 8
 print("n component")
 
-  # exp_ratio[exp_ratio<.9] = 1000
-
-  # print(np.argmin(exp_ratio))
 tabBAcc = []
 nDim_optimal_pca_tab = []
 Ntimes = 1
@@ -94,8 +79,4 @@ for iSubject in subjectNbTab:
 
 print('Nb samples whole : M=',str(np.mean(nbSample_subjects)),' min=',str(np.min(nbSample_subjects)),' max=',str(np.max(nbSample_subjects)))
 print('Nb samples train : M=',str(np.mean(nbSample_train_subjects)),' min=',str(np.min(nbSample_train_subjects)),' max=',str(np.max(nbSample_train_subjects)))
-
-
-    # sio.savemat(outFolder+str(iSubject).zfill(3)+'_AllMaps_3d.mat', {'canonicalAllMaps': np.asarray(tabInterpBySubject), 'iSubject': iSubject, 'nDim_optimal_pca_tab':np.asarray(nDim_optimal_pca_tab), 'explained_variance':np.sum(pca_optimal_dim.explained_variance_ratio_)})
-
 
